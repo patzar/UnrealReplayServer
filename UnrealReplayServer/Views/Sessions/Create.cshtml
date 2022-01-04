@@ -1,0 +1,88 @@
+﻿@model UnrealReplayServer.Databases.Models.Session
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<h1>Create</h1>
+
+<h4>Session</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" asp-for="IsLive" /> @Html.DisplayNameFor(model => model.IsLive)
+                </label>
+            </div>
+            <div class="form-group">
+                <label asp-for="SessionName" class="control-label"></label>
+                <input asp-for="SessionName" class="form-control" />
+                <span asp-validation-for="SessionName" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="AppVersion" class="control-label"></label>
+                <input asp-for="AppVersion" class="form-control" />
+                <span asp-validation-for="AppVersion" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="NetVersion" class="control-label"></label>
+                <input asp-for="NetVersion" class="form-control" />
+                <span asp-validation-for="NetVersion" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Changelist" class="control-label"></label>
+                <input asp-for="Changelist" class="form-control" />
+                <span asp-validation-for="Changelist" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Meta" class="control-label"></label>
+                <input asp-for="Meta" class="form-control" />
+                <span asp-validation-for="Meta" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="PlatformFriendlyName" class="control-label"></label>
+                <input asp-for="PlatformFriendlyName" class="form-control" />
+                <span asp-validation-for="PlatformFriendlyName" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="TotalDemoTimeMs" class="control-label"></label>
+                <input asp-for="TotalDemoTimeMs" class="form-control" />
+                <span asp-validation-for="TotalDemoTimeMs" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="TotalUploadedBytes" class="control-label"></label>
+                <input asp-for="TotalUploadedBytes" class="form-control" />
+                <span asp-validation-for="TotalUploadedBytes" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="TotalChunks" class="control-label"></label>
+                <input asp-for="TotalChunks" class="form-control" />
+                <span asp-validation-for="TotalChunks" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="CreationDate" class="control-label"></label>
+                <input asp-for="CreationDate" class="form-control" />
+                <span asp-validation-for="CreationDate" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="InternalUsers" class="control-label"></label>
+                <input asp-for="InternalUsers" class="form-control" />
+                <span asp-validation-for="InternalUsers" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

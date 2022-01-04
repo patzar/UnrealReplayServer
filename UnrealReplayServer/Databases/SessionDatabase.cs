@@ -7,22 +7,23 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using UnrealReplayServer.Data;
 using UnrealReplayServer.Databases.Models;
 
 namespace UnrealReplayServer.Databases
 {
     public class SessionDatabase : ISessionDatabase
     {
-        private Dictionary<string, Session> SessionList = new Dictionary<string, Session>();
+        private readonly UnrealReplayServerContext _context;
+
+        public SessionDatabase(UnrealReplayServerContext context)
+        {
+            _context = context;
+        }
 
         public async Task<string> CreateSession(string setSessionName, string setAppVersion, string setNetVersion, int? setChangelist,
             string setPlatformFriendlyName)
         {
-            if (SessionList.ContainsKey(setSessionName))
-            {
-                SessionList.Remove(setSessionName);
-            }
-
             Session newSession = new Session()
             {
                 AppVersion = setAppVersion,
@@ -32,66 +33,59 @@ namespace UnrealReplayServer.Databases
                 SessionName = setSessionName,
                 IsLive = true
             };
-            SessionList.Add(newSession.SessionName, newSession);
+            await _context.Session.AddAsync(newSession);
+            await _context.SaveChangesAsync();
             return newSession.SessionName;
         }
 
         public async Task<Session> GetSessionByName(string sessionName)
         {
-            if (SessionList.ContainsKey(sessionName))
-            {
-                return SessionList[sessionName];
-            }
-            return null;
+            var session = await _context.Session.FindAsync(sessionName);
+            return session;
         }
 
         public async Task<SessionFile> GetSessionHeader(string sessionName)
         {
-            if (SessionList.ContainsKey(sessionName))
+            var session = await _context.Session.FindAsync(sessionName);
+            if (session == null)
             {
-                return SessionList[sessionName].HeaderFile;
+                return null;
             }
-            return null;
+            return session.HeaderFile;
         }
 
         public async Task<SessionFile> GetSessionChunk(string sessionName, int chunkIndex)
         {
-            if (SessionList.ContainsKey(sessionName))
+            var session = await _context.Session.FindAsync(sessionName);
+            if (session == null)
             {
-                var session = SessionList[sessionName];
-                if (chunkIndex >= 0 && chunkIndex < session.SessionFiles.Count)
-                {
-                    return session.SessionFiles[chunkIndex];
-                }
+                return null;
+            }
+            if (chunkIndex >= 0 && chunkIndex < session.SessionFiles.Count)
+            {
+                return session.SessionFiles.Where(s => s.ChunkIndex == chunkIndex).First();
             }
             return null;
         }
 
         public async Task<bool> SetUsers(string sessionName, string[] users)
         {
-            if (SessionList.ContainsKey(sessionName) == false)
-            {
-                LogError($"Session {sessionName} not found");
-                return false;
-            }
-
-            var session = SessionList[sessionName];
-            session.Users = users;
-
             return true;
         }
 
         public async Task<bool> SetHeader(string sessionName, SessionFile sessionFile, int streamChunkIndex, int totalDemoTimeMs)
         {
-            if (SessionList.ContainsKey(sessionName) == false)
+            var session = await _context.Session.FindAsync(sessionName);
+            if (session == null)
             {
                 LogError($"Session {sessionName} not found");
                 return false;
             }
-
-            var session = SessionList[sessionName];
+ 
             session.HeaderFile = sessionFile;
             session.TotalDemoTimeMs = totalDemoTimeMs;
+            _context.Session.Update(session);
+            await _context.SaveChangesAsync();
 
             Log($"[HEADER] Stats for {sessionName}: TotalDemoTimeMs={session.TotalDemoTimeMs}");
 
@@ -100,17 +94,19 @@ namespace UnrealReplayServer.Databases
 
         public async Task<bool> AddChunk(string sessionName, SessionFile sessionFile, int totalDemoTimeMs, int totalChunks, int totalBytes)
         {
-            if (SessionList.ContainsKey(sessionName) == false)
+            var session = await _context.Session.FindAsync(sessionName);
+            if (session == null)
             {
                 LogError($"Session {sessionName} not found");
                 return false;
             }
 
-            var session = SessionList[sessionName];
             session.TotalDemoTimeMs = totalDemoTimeMs;
             session.TotalChunks = totalChunks;
             session.TotalUploadedBytes = totalBytes;
             session.SessionFiles.Add(sessionFile);
+            _context.Session.Update(session);
+            await _context.SaveChangesAsync();
 
             Log($"[CHUNK] Stats for {sessionName}: TotalDemoTimeMs={session.TotalDemoTimeMs}, TotalChunks={session.TotalChunks}, " +
                 $"TotalUploadedBytes={session.TotalUploadedBytes}");
@@ -120,17 +116,18 @@ namespace UnrealReplayServer.Databases
 
         public async Task StopSession(string sessionName, int totalDemoTimeMs, int totalChunks, int totalBytes)
         {
-            if (SessionList.ContainsKey(sessionName) == false)
+            var session = await _context.Session.FindAsync(sessionName);
+            if (session == null)
             {
                 LogError($"Session {sessionName} not found");
                 return;
             }
-
-            var session = SessionList[sessionName];
             session.IsLive = false;
             session.TotalDemoTimeMs = totalDemoTimeMs;
             session.TotalChunks = totalChunks;
             session.TotalUploadedBytes = totalBytes;
+            _context.Session.Update(session);
+            await _context.SaveChangesAsync();
 
             Log($"[END] Stats for {sessionName}: TotalDemoTimeMs={session.TotalDemoTimeMs}, TotalChunks={session.TotalChunks}, " +
                 $"TotalUploadedBytes={session.TotalUploadedBytes}");
@@ -151,10 +148,12 @@ namespace UnrealReplayServer.Databases
 
                 for (int i = 0; i < sessionNames.Length; i++)
                 {
-                    if (SessionList.ContainsKey(sessionNames[i]))
+                    var session = await _context.Session.FindAsync(sessionNames[i]);
+                    if (session == null)
                     {
-                        sessions.Add(SessionList[sessionNames[i]]);
+                        continue;
                     }
+                    sessions.Add(session);
                 }
 
                 return sessions.ToArray();
@@ -163,11 +162,12 @@ namespace UnrealReplayServer.Databases
 
         public async Task<Session[]> FindReplays(string app, int? cl, string version, string meta, string user, bool? recent)
         {
+            _context.Database.EnsureCreated();
+
             return await Task.Run(() =>
             {
                 List<Session> sessions = new List<Session>();
-
-                var values = SessionList.Values;
+                var values = _context.Session.ToList();
                 foreach (var entry in values)
                 {
                     bool shouldAdd = true;
@@ -183,10 +183,11 @@ namespace UnrealReplayServer.Databases
                     {
                         shouldAdd &= entry.NetVersion == version;
                     }
-                    if (user != null)
+                    // Disable search by users for now.
+                /*    if (user != null)
                     {
                         shouldAdd &= entry.Users.Contains(user);
-                    }
+                    } */
 
                     if (shouldAdd)
                     {
@@ -202,10 +203,8 @@ namespace UnrealReplayServer.Databases
         {
             await Task.Run(() =>
             {
-                var sessions = new Session[SessionList.Count];
-                SessionList.Values.CopyTo(sessions, 0);
-
-                for (int i = 0; i < sessions.Length; i++)
+                var sessions = _context.Session.ToList();
+                for (int i = 0; i < sessions.Count; i++)
                 {
                     sessions[i].CheckViewersTimeout();
                 }

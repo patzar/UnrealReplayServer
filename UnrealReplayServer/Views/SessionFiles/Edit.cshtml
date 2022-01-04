@@ -1,0 +1,49 @@
+﻿@model UnrealReplayServer.Databases.Models.SessionFile
+
+@{
+    ViewData["Title"] = "Edit";
+}
+
+<h1>Edit</h1>
+
+<h4>SessionFile</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Filename" />
+            <div class="form-group">
+                <label asp-for="Data" class="control-label"></label>
+                <input asp-for="Data" class="form-control" />
+                <span asp-validation-for="Data" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="StartTimeMs" class="control-label"></label>
+                <input asp-for="StartTimeMs" class="form-control" />
+                <span asp-validation-for="StartTimeMs" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="EndTimeMs" class="control-label"></label>
+                <input asp-for="EndTimeMs" class="form-control" />
+                <span asp-validation-for="EndTimeMs" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ChunkIndex" class="control-label"></label>
+                <input asp-for="ChunkIndex" class="form-control" />
+                <span asp-validation-for="ChunkIndex" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

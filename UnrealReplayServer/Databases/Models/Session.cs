@@ -5,6 +5,8 @@ Copyright (c) 2021 Henning Thoele
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -21,6 +23,7 @@ namespace UnrealReplayServer.Databases.Models
     {
         public bool IsLive { get; set; } = false;
 
+        [Key]
         public string SessionName { get; set; } = string.Empty;
 
         public string AppVersion { get; set; } = string.Empty;
@@ -41,13 +44,25 @@ namespace UnrealReplayServer.Databases.Models
 
         public DateTimeOffset CreationDate { get; set; } = DateTimeOffset.UtcNow;
 
-        public string[] Users { get; set; } = Array.Empty<string>();
+        public string InternalUsers { get; set; }
 
+        [NotMapped]
+        public string[] Users
+        {
+            get => InternalUsers.Split(';');
+            set
+            {
+                Users = value;
+                InternalUsers = String.Join(";", Users);
+            }
+        }
+
+        [NotMapped]
         public Dictionary<string, SessionViewer> Viewers { get; set; } = new Dictionary<string, SessionViewer>();
 
-        public SessionFile HeaderFile { get; set; }
+        virtual public SessionFile HeaderFile { get; set; }
 
-        public List<SessionFile> SessionFiles = new List<SessionFile>();
+        virtual public ICollection<SessionFile> SessionFiles { get; set; } = new List<SessionFile>();
 
         internal string AddViewer(string user)
         {

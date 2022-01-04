@@ -12,6 +12,7 @@ using System.Linq;
 using System.Net;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using UnrealReplayServer.Data;
 using UnrealReplayServer.Databases;
 using UnrealReplayServer.Databases.Models;
 using UnrealReplayServer.Models;
@@ -23,6 +24,7 @@ namespace UnrealReplayServer.Controllers
     public class ReplayController : ControllerBase
     {
         private readonly ILogger<ReplayController> _logger;
+        private readonly UnrealReplayServerContext _context;
 
         private ISessionDatabase sessionDatabase = null;
         private IEventDatabase eventDatabase = null;
@@ -129,8 +131,9 @@ namespace UnrealReplayServer.Controllers
                 SessionFile sessionFile = new SessionFile()
                 {
                     Data = data,
-                    Filename = filename
-                };
+                    Filename = filename,
+                    SessionFileID = Guid.NewGuid().ToString()
+            };
                 await sessionDatabase.SetHeader(session, sessionFile, numChunks.Value, time.Value);
             }
             else if (filename.ToLowerInvariant().StartsWith("stream."))
@@ -143,7 +146,8 @@ namespace UnrealReplayServer.Controllers
                         Filename = filename,
                         StartTimeMs = mTime1.Value,
                         EndTimeMs = mTime2.Value,
-                        ChunkIndex = chunkIndex
+                        ChunkIndex = chunkIndex,
+                        SessionFileID = Guid.NewGuid().ToString()
                     };
                     await sessionDatabase.AddChunk(session, sessionFile, time.Value, numChunks.Value, absSize.Value);
                 }

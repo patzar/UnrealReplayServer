@@ -15,6 +15,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnrealReplayServer.Databases;
+using Microsoft.EntityFrameworkCore;
+using UnrealReplayServer.Data;
 
 namespace UnrealReplayServer
 {
@@ -34,7 +36,11 @@ namespace UnrealReplayServer
             {
                 options.OutputFormatters.Insert(0, new BinaryOutputFormatter());
             });
-            services.AddSingleton<ISessionDatabase>(new SessionDatabase());
+            services.AddDbContext<UnrealReplayServerContext>(options =>
+                  options.UseSqlServer(Configuration.GetConnectionString("UnrealReplayServerContext")).UseLazyLoadingProxies());
+            var sp = services.BuildServiceProvider();
+            var dbContext = sp.GetRequiredService<UnrealReplayServerContext>();
+            services.AddSingleton<ISessionDatabase>(new SessionDatabase(dbContext));
             services.AddSingleton<IEventDatabase>(new EventDatabase());
         }
 
