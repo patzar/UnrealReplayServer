@@ -1,14 +1,27 @@
-﻿@model IEnumerable<UnrealReplayServer.Databases.Models.SessionFile>
+﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model IEnumerable<UnrealReplayServer.Databases.Models.SessionFile>
 
 @{
     ViewData["Title"] = "Index";
 }
 
+@using System.Security.Principal
+@if (User.Identity.IsAuthenticated)
+{
+    <ul class="nav navbar-nav navbar-right">
+        <li class="navbar-text">Hello @User.Identity.Name!</li>
+        <li><a asp-area="MicrosoftIdentity" asp-controller="Account" asp-action="SignOut">Sign out</a></li>
+    </ul>
+}
+else
+{
+    <ul class="nav navbar-nav navbar-right">
+        <li><a asp-area="MicrosoftIdentity" asp-controller="Account" asp-action="SignIn">Sign in</a></li>
+    </ul>
+}
+
 <h1>Index</h1>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
 <table class="table">
     <thead>
         <tr>
@@ -43,7 +56,6 @@
                 @Html.DisplayFor(modelItem => item.ChunkIndex)
             </td>
             <td>
-                <a asp-action="Edit" asp-route-id="@item.Filename">Edit</a> |
                 <a asp-action="Details" asp-route-id="@item.Filename">Details</a> |
                 <a asp-action="Delete" asp-route-id="@item.Filename">Delete</a>
             </td>

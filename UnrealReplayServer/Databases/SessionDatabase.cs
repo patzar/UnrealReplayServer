@@ -22,7 +22,7 @@ namespace UnrealReplayServer.Databases
         }
 
         public async Task<string> CreateSession(string setSessionName, string setAppVersion, string setNetVersion, int? setChangelist,
-            string setPlatformFriendlyName)
+            string setPlatformFriendlyName, string[] users)
         {
             Session newSession = new Session()
             {
@@ -31,9 +31,10 @@ namespace UnrealReplayServer.Databases
                 PlatformFriendlyName = setPlatformFriendlyName,
                 Changelist = setChangelist != null ? setChangelist.Value : 0,
                 SessionName = setSessionName,
-                IsLive = true
+                IsLive = true, 
+                Users = users
             };
-            await _context.Session.AddAsync(newSession);
+            _context.Session.Add(newSession);
             await _context.SaveChangesAsync();
             return newSession.SessionName;
         }
@@ -70,6 +71,11 @@ namespace UnrealReplayServer.Databases
 
         public async Task<bool> SetUsers(string sessionName, string[] users)
         {
+            var session = await _context.Session.FindAsync(sessionName);
+            var mergedUsers = session.Users.Union(users).ToArray();
+            session.Users = mergedUsers;
+            _context.Session.Update(session);
+            await _context.SaveChangesAsync();
             return true;
         }
 
@@ -171,6 +177,11 @@ namespace UnrealReplayServer.Databases
                 foreach (var entry in values)
                 {
                     bool shouldAdd = true;
+                    DateTimeOffset cutOff = DateTimeOffset.UtcNow.AddDays(-7);
+                    if(DateTimeOffset.Compare(entry.CreationDate, cutOff) < 0)
+                    {
+                        shouldAdd = false;
+                    }
                     if (app != null)
                     {
                         shouldAdd &= entry.AppVersion == app;
@@ -183,11 +194,16 @@ namespace UnrealReplayServer.Databases
                     {
                         shouldAdd &= entry.NetVersion == version;
                     }
-                    // Disable search by users for now.
-                /*    if (user != null)
+                    if (user != null)
                     {
-                        shouldAdd &= entry.Users.Contains(user);
-                    } */
+                        if (entry.InternalUsers != null && entry.Users != null)
+                        {
+                            shouldAdd &= entry.Users.Contains(user);
+                        } else
+                        {
+                            shouldAdd = false;
+                        }
+                    }
 
                     if (shouldAdd)
                     {

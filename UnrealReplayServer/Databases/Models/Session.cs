@@ -44,7 +44,7 @@ namespace UnrealReplayServer.Databases.Models
 
         public DateTimeOffset CreationDate { get; set; } = DateTimeOffset.UtcNow;
 
-        public string InternalUsers { get; set; }
+        public string InternalUsers { get; set; } = string.Empty;
 
         [NotMapped]
         public string[] Users
@@ -52,8 +52,7 @@ namespace UnrealReplayServer.Databases.Models
             get => InternalUsers.Split(';');
             set
             {
-                Users = value;
-                InternalUsers = String.Join(";", Users);
+                InternalUsers = String.Join(";", value);
             }
         }
 

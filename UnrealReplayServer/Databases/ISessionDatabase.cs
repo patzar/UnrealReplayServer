@@ -11,7 +11,7 @@ namespace UnrealReplayServer.Databases
     public interface ISessionDatabase
     {
         Task<bool> AddChunk(string sessionName, SessionFile sessionFile, int totalDemoTimeMs, int totalChunks, int totalBytes);
-        Task<string> CreateSession(string setSessionName, string setAppVersion, string setNetVersion, int? setChangelist, string setPlatformFriendlyName);
+        Task<string> CreateSession(string setSessionName, string setAppVersion, string setNetVersion, int? setChangelist, string setPlatformFriendlyName, string[] users);
         Task<Session[]> FindReplays(string app, int? cl, string version, string meta, string user, bool? recent);
         Task<Session[]> FindReplaysByGroup(string group, IEventDatabase eventDatabase);
         Task<Session> GetSessionByName(string sessionName);
